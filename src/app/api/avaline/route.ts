@@ -160,7 +160,8 @@ export async function POST(req: Request) {
         visit(responsesData, 0);
         // Prefer the longest plausible sentence
         collected.sort((a, b) => b.length - a.length);
-        reply = collected.find(s => /[a-zA-Z]/.test(s))?.trim() || '';
+        const foundString = collected.find(s => /[a-zA-Z]/.test(s));
+        reply = foundString ? foundString.trim() : '';
       }
     } catch (e) {
       console.warn('Responses API attempt failed or returned no text. Falling back to chat.completions...', e);
