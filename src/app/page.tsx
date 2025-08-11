@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { PriceMetrics, AvalineResponse } from '@/types';
+import Image from 'next/image';
 
 // Typing animation component
 const TypingMessage = ({ message }: { message: string }) => {
@@ -162,9 +163,11 @@ export default function Home() {
       {/* Header with Logo */}
       <header>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-          <img 
+          <Image 
             src="/avalineLogo.png" 
             alt="Avaline Logo" 
+            width={64}
+            height={64}
             className="h-16 mx-auto"
           />
         </div>
@@ -371,7 +374,7 @@ export default function Home() {
             ) : (
               <div className="text-center">
                 <p className="text-2xl text-white mb-2">Thanks love!</p>
-                <p className="text-white opacity-80">You're all set!</p>
+                <p className="text-white opacity-80">You&apos;re all set!</p>
               </div>
             )}
           </div>
