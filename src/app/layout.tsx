@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Avaline — Concert Price Concierge",
-  description: "British-voiced market insights for concert ticket pricing",
+  title: "Avaline",
+  description: "Market insights for Oasis tickets... courtesy of Avaline of northern Britain.",
 };
 
 export default function RootLayout({
