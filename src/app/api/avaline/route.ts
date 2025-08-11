@@ -160,7 +160,7 @@ export async function POST(req: Request) {
         visit(responsesData, 0);
         // Prefer the longest plausible sentence
         collected.sort((a, b) => b.length - a.length);
-        const foundString = collected.find(s => /[a-zA-Z]/.test(s));
+        const foundString = collected.find((s: string) => /[a-zA-Z]/.test(s));
         reply = foundString ? foundString.trim() : '';
       }
     } catch (e) {
