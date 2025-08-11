@@ -61,18 +61,8 @@ function composeTemplateReply(metrics: PriceMetrics): string {
 async function generateAIPoweredReply(metrics: PriceMetrics, question?: string): Promise<string> {
   const { current, delta24h, low7d, avg_qty7d } = metrics;
   
-  // Create rich context for the AI (commented out for now)
-  // const marketContext = {
-  //   currentPrice: current,
-  //   priceChange24h: delta24h,
-  //   weeklyLow: low7d,
-  //   averageQuantity: avg_qty7d,
-  //   priceTrend: delta24h && delta24h > 0 ? 'rising' : delta24h && delta24h < 0 ? 'falling' : 'stable',
-  //   isGoodDeal: current && low7d ? current <= low7d * 1.1 : false, // Within 10% of weekly low
-  // };
-
   // Craft the AI prompt with Avaline's personality
-  const prompt = `You are Avaline, a charming British AI market analyst with a warm, approachable personality. You use British slang, endearments like "love", "darling", "pet", and speak with a slight UK accent.
+  const prompt = `You are Avaline, a charming British AI market analyst with a warm, approachable personality. You use British slang, endearments like "love", "darling", "pet", and speak with a slight northernUK accent.
 
 Current market data for East Rutherford Night 1:
 - Current price: $${current || 'N/A'}
@@ -89,6 +79,7 @@ Please provide a personalized, British-accented response that:
 4. Provides practical, actionable advice based on the data
 5. Shows personality and emotion about the prices
 6. Keeps it conversational and friendly, not robotic
+7. Informs users that there is a link below the chat bubble to subscribe to email price alerts
 
 Make it sound like you're chatting with a friend over tea. Be warm, witty, and genuinely helpful.`;
 
@@ -108,8 +99,6 @@ Make it sound like you're chatting with a friend over tea. Be warm, witty, and g
       max_tokens: 300,
       temperature: 0.8, // Adds creativity while maintaining consistency
     };
-
-
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -139,6 +128,8 @@ Make it sound like you're chatting with a friend over tea. Be warm, witty, and g
  * Calculates price metrics from raw price data
  */
 export function calculatePriceMetrics(points: PriceRow[]): PriceMetrics {
+  console.log('Raw price points:', points.map(p => `Q${p.quantity}: $${p.price} at ${p.timestamp}`));
+  
   if (points.length === 0) {
     return {
       points: [],
@@ -160,24 +151,67 @@ export function calculatePriceMetrics(points: PriceRow[]): PriceMetrics {
     };
   }
 
-  // Get current (last) price
-  const current = points[points.length - 1].price;
+  // Group points by date to find current prices for both quantities
+  const groupedByDate = points.reduce((acc, point) => {
+    // Use YYYY-MM-DD format for more reliable date grouping
+    const date = new Date(point.timestamp).toISOString().split('T')[0];
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(point);
+    return acc;
+  }, {} as Record<string, PriceRow[]>);
+
+  // Get today's date (most recent date in the data)
+  const mostRecentDate = Object.keys(groupedByDate).sort().pop();
+  const mostRecentPoints = mostRecentDate ? groupedByDate[mostRecentDate] : [];
   
-  // Calculate 24h delta (current - previous)
-  const delta24h = points.length >= 2 ? current - points[points.length - 2].price : null;
+  // Current lowest price is the minimum of today's prices across both quantities
+  const current = mostRecentPoints.length > 0 ? Math.min(...mostRecentPoints.map(p => p.price)) : null;
+  console.log('Grouped data by date:', groupedByDate);
+  console.log('Today\'s date:', mostRecentDate);
+  console.log('Today\'s points:', mostRecentPoints);
+  console.log('Today\'s prices:', mostRecentPoints.map(p => `Q${p.quantity}: $${p.price}`));
+  console.log('Today\'s lowest:', current);
   
-  // Calculate 7-day low (min of last 7 points, or all if less than 7)
-  const last7Points = points.slice(-7);
-  const low7d = Math.min(...last7Points.map(p => p.price));
+  // Calculate 24h delta (current - previous day's lowest price)
+  const previousDate = Object.keys(groupedByDate).sort().slice(-2, -1)[0];
+  const previousPoints = previousDate ? groupedByDate[previousDate] : [];
+  const previousLowest = previousPoints.length > 0 ? Math.min(...previousPoints.map(p => p.price)) : null;
+  const delta24h = current !== null && previousLowest !== null ? current - previousLowest : null;
   
-  // Calculate average quantity over last 7 points
-  const avg_qty7d = last7Points.reduce((sum, p) => sum + p.quantity, 0) / last7Points.length;
+  // Use the already grouped data to find the lowest price for each day
+
+  // Get the last 7 days (or all available days if less than 7)
+  const last7Days = Object.keys(groupedByDate).sort().slice(-7);
+  
+  // Calculate 7-day low by finding the minimum price across all quantities for each day
+  const dailyLowestPrices = last7Days.map(date => {
+    const dayPoints = groupedByDate[date];
+    const dayLow = Math.min(...dayPoints.map(p => p.price));
+    console.log(`Date: ${date}, Points:`, dayPoints.map(p => `Q${p.quantity}: $${p.price}`), `Day Low: $${dayLow}`);
+    return dayLow;
+  });
+  
+  const low7d = Math.min(...dailyLowestPrices);
+  console.log('Daily lowest prices:', dailyLowestPrices, '7-day low:', low7d);
+  
+  // Find which quantity has the cheapest price today
+  let cheapestQuantity = null;
+  if (mostRecentPoints.length > 0) {
+    const cheapestPoint = mostRecentPoints.reduce((min, point) => 
+      point.price < min.price ? point : min
+    );
+    cheapestQuantity = cheapestPoint.quantity;
+  }
+  
+  console.log('Cheapest quantity today:', cheapestQuantity);
 
   return {
     points,
     current,
     delta24h,
     low7d,
-    avg_qty7d: Math.round(avg_qty7d * 100) / 100, // Round to 2 decimal places
+    avg_qty7d: cheapestQuantity, // Now represents the cheapest quantity today
   };
 } 

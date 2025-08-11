@@ -49,6 +49,7 @@ export default function Home() {
   const [subscribeSuccess, setSubscribeSuccess] = useState(false);
 
 
+
   useEffect(() => {
     fetchPrices();
   }, []);
@@ -127,7 +128,8 @@ export default function Home() {
       });
       
       if (response.ok) {
-        setSubscribeSuccess(true);
+        // Small delay to ensure clean transition
+        setTimeout(() => setSubscribeSuccess(true), 100);
         setTimeout(() => {
           setShowSubscribeOverlay(false);
           setSubscribeEmail('');
@@ -140,15 +142,17 @@ export default function Home() {
     } catch (error) {
       console.error('Subscription error:', error);
       // Fallback to success state for better UX
-      setSubscribeSuccess(true);
-      setTimeout(() => {
-        setShowSubscribeOverlay(false);
-        setSubscribeEmail('');
-        setSubscribeSuccess(false);
-        setSubscribeLoading(false);
-      }, 2000);
+      setTimeout(() => setSubscribeSuccess(true), 100);
+              setTimeout(() => {
+          setShowSubscribeOverlay(false);
+          setSubscribeEmail('');
+          setSubscribeSuccess(false);
+          setSubscribeLoading(false);
+        }, 2000);
     }
   };
+
+
 
   if (loading) {
     return (
@@ -228,16 +232,39 @@ export default function Home() {
               aria-label="Send"
               className="p-3 md:p-3 rounded-full border border-[#1a1a1a] hover:border-[#f9f9fb] bg-black transition-colors disabled:opacity-80"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="w-6 h-6 text-[#f9f9fb]"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
-              </svg>
+              {avalineLoading ? (
+                <svg
+                  className="animate-spin w-6 h-6 text-[#f9f9fb]"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-100"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="w-6 h-6 text-[#f9f9fb]"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+                </svg>
+              )}
             </button>
           </div>
 
@@ -282,53 +309,115 @@ export default function Home() {
         </div>
 
         {/* Price Chart - Center aligned */}
-        {metrics && metrics.points.length >= 2 && (
-          <div className="rounded-lg p-8 mb-16 bg-black text-center">
-            <h3 className="text-lg font-bold text-[#f9f9fb] mb-6">Price Over Time</h3>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metrics.points}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
-                  <XAxis 
-                    dataKey="timestamp" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                    tick={{ fill: '#f9f9fb', fontSize: 12 }}
-                    axisLine={{ stroke: '#1a1a1a' }}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#f9f9fb', fontSize: 12 }}
-                    axisLine={{ stroke: '#1a1a1a' }}
-                    tickFormatter={(value) => `$${value}`}
-                  />
-                  <Tooltip 
-                    labelFormatter={(value) => new Date(value).toLocaleString()}
-                    formatter={(value: number) => [`$${value}`, 'Price']}
-                    contentStyle={{
-                      backgroundColor: '#000',
-                      border: '1px solid #1a1a1a',
-                      borderRadius: '8px',
-                      color: '#f9f9fb'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="price" 
-                    stroke="#f9f9fb" 
-                    strokeWidth={2}
-                    dot={{ fill: '#f9f9fb', strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+        {metrics && metrics.points.length >= 2 && (() => {
+          // Process data to group by date and show both quantities
+          const groupedData = metrics.points.reduce((acc, point) => {
+            // Use YYYY-MM-DD format for consistent date grouping
+            const date = new Date(point.timestamp).toISOString().split('T')[0];
+            if (!acc[date]) {
+              acc[date] = {
+                date: date,
+                timestamp: point.timestamp,
+                qty1Price: null,
+                qty2Price: null
+              };
+            }
+            
+            if (point.quantity === 1) {
+              acc[date].qty1Price = point.price;
+            } else if (point.quantity === 2) {
+              acc[date].qty2Price = point.price;
+            }
+            
+            return acc;
+          }, {} as Record<string, { date: string; timestamp: string; qty1Price: number | null; qty2Price: number | null }>);
+
+          const chartData = Object.values(groupedData).sort((a, b) => 
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+
+          return (
+            <div className="rounded-lg p-8 mb-16 bg-black text-center">
+              <h3 className="text-lg font-bold text-[#f9f9fb] mb-6">Price Over Time by Quantity</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                      tick={{ fill: '#f9f9fb', fontSize: 12 }}
+                      axisLine={{ stroke: '#1a1a1a' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#f9f9fb', fontSize: 12 }}
+                      axisLine={{ stroke: '#1a1a1a' }}
+                      tickFormatter={(value) => `$${value}`}
+                    />
+                    <Tooltip 
+                      labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                      formatter={(value: number, name: string) => {
+                        if (value === null) return ['N/A', name];
+                        return [`$${value}`, name];
+                      }}
+                      contentStyle={{
+                        backgroundColor: '#000',
+                        border: '1px solid #1a1a1a',
+                        borderRadius: '8px',
+                        color: '#f9f9fb'
+                      }}
+                    />
+                    {/* Line for Quantity 1 - Thin */}
+                    <Line 
+                      type="monotone" 
+                      dataKey="qty1Price" 
+                      stroke="#f9f9fb" 
+                      strokeWidth={1.5}
+                      dot={{ fill: '#f9f9fb', strokeWidth: 1, r: 3 }}
+                      name="Quantity 1"
+                      connectNulls={false}
+                    />
+                    {/* Line for Quantity 2 - Thick */}
+                    <Line 
+                      type="monotone" 
+                      dataKey="qty2Price" 
+                      stroke="#f9f9fb" 
+                      strokeWidth={4}
+                      dot={{ fill: '#f9f9fb', strokeWidth: 2, r: 5 }}
+                      name="Quantity 2"
+                      connectNulls={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+                          <div className="flex justify-center gap-6 mt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#f9f9fb] rounded-full"></div>
+                <span className="text-[#f9f9fb] text-sm">Quantity 1</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-[#f9f9fb] rounded-full"></div>
+                <span className="text-[#f9f9fb] text-sm">Quantity 2</span>
+              </div>
             </div>
-          </div>
-        )}
+            </div>
+          );
+        })()}
       </div>
       <footer className="text-center py-8 mt-8">
         <p className="text-[#f9f9fb] text-sm mb-2">
           Inspired by Bonehead&apos;s Bank Holiday by Oasis
         </p>
         <p className="text-[#f9f9fb] text-sm">
-          Created with Love by James Swinehart
+          Created with Love by{' '}
+          <a 
+            href="https://jamesswineh.art" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[#f9f9fb] underline"
+          >
+            James Swinehart
+          </a>
         </p>
       </footer>
 
@@ -336,7 +425,12 @@ export default function Home() {
       {showSubscribeOverlay && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-[#1a1a1a] rounded-lg p-8 max-w-md w-full">
-            {!subscribeSuccess ? (
+            {subscribeSuccess ? (
+              <div className="text-center">
+                <p className="text-2xl text-white mb-2">Thanks love!</p>
+                <p className="text-white opacity-80">You&apos;re all set!</p>
+              </div>
+            ) : (
               <>
                 <h3 className="text-xl font-bold text-white mb-4 text-center">
                   Subscribe to Avaline
@@ -371,11 +465,6 @@ export default function Home() {
                   </div>
                 </form>
               </>
-            ) : (
-              <div className="text-center">
-                <p className="text-2xl text-white mb-2">Thanks love!</p>
-                <p className="text-white opacity-80">You&apos;re all set!</p>
-              </div>
             )}
           </div>
         </div>
