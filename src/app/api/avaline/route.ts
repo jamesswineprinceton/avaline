@@ -140,7 +140,7 @@ export async function POST(req: Request) {
           if (!node || depth > 6) return;
           const t = typeof node;
           if (t === 'string') {
-            const s = node.trim();
+            const s = (node as string).trim();
             if (s && s.length > 4 && !s.startsWith('{') && !s.startsWith('[')) {
               collected.push(s);
             }
