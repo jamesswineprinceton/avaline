@@ -239,7 +239,7 @@ export default function Home() {
           </div>
 
           {/* Subscription line */}
-          <div className="text-center mt-8 mb-12">
+          <div className="text-center mt-8">
             <button
               onClick={() => setShowSubscribeOverlay(true)}
               className="text-[#f9f9fb] text-sm opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
