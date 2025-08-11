@@ -5,7 +5,8 @@ import { PriceMetrics, PriceRow } from '@/types';
  * Grounded in actual data with no fabrication
  */
 export async function composeAvalineReply(metrics: PriceMetrics, question?: string): Promise<string> {
-  const { current, delta24h, low7d, avg_qty7d } = metrics;
+  // Destructure metrics for potential future use
+  // const { current, delta24h, low7d, avg_qty7d } = metrics;
 
   // If no LLM key present, return deterministic template message
   if (!process.env.OPENAI_API_KEY) {
@@ -15,7 +16,7 @@ export async function composeAvalineReply(metrics: PriceMetrics, question?: stri
   // Use OpenAI to generate personalized response
   try {
     return await generateAIPoweredReply(metrics, question);
-  } catch (error) {
+  } catch {
     console.error('AI generation failed, falling back to template');
     return composeTemplateReply(metrics);
   }
@@ -60,15 +61,15 @@ function composeTemplateReply(metrics: PriceMetrics): string {
 async function generateAIPoweredReply(metrics: PriceMetrics, question?: string): Promise<string> {
   const { current, delta24h, low7d, avg_qty7d } = metrics;
   
-  // Create rich context for the AI
-  const marketContext = {
-    currentPrice: current,
-    priceChange24h: delta24h,
-    weeklyLow: low7d,
-    averageQuantity: avg_qty7d,
-    priceTrend: delta24h && delta24h > 0 ? 'rising' : delta24h && delta24h < 0 ? 'falling' : 'stable',
-    isGoodDeal: current && low7d ? current <= low7d * 1.1 : false, // Within 10% of weekly low
-  };
+  // Create rich context for the AI (commented out for now)
+  // const marketContext = {
+  //   currentPrice: current,
+  //   priceChange24h: delta24h,
+  //   weeklyLow: low7d,
+  //   averageQuantity: avg_qty7d,
+  //   priceTrend: delta24h && delta24h > 0 ? 'rising' : delta24h && delta24h < 0 ? 'falling' : 'stable',
+  //   isGoodDeal: current && low7d ? current <= low7d * 1.1 : false, // Within 10% of weekly low
+  // };
 
   // Craft the AI prompt with Avaline's personality
   const prompt = `You are Avaline, a charming British AI market analyst with a warm, approachable personality. You use British slang, endearments like "love", "darling", "pet", and speak with a slight UK accent.

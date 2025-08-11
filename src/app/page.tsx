@@ -200,7 +200,7 @@ export default function Home() {
                       })()} ${(() => {
                         const price = metrics?.current || 0;
                         if (price > 600) return "i might check back later. these are a bit steep, love.";
-                        if (price > 400) return "these prices aren't half bad... i might give this a go, love!";
+                        if (price > 400) return "these prices aren&apos;t half bad... i might give this a go, love!";
                         return "go for it, lovey!";
                       })()}`}
                     />
@@ -322,7 +322,7 @@ export default function Home() {
       </div>
       <footer className="text-center py-8 mt-8">
         <p className="text-[#f9f9fb] text-sm mb-2">
-          Inspired by Bonehead's Bank Holiday by Oasis
+          Inspired by Bonehead&apos;s Bank Holiday by Oasis
         </p>
         <p className="text-[#f9f9fb] text-sm">
           Created with Love by James Swinehart

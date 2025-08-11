@@ -3,6 +3,22 @@ import { fetchPriceRows } from '@/lib/sheets';
 import { calculatePriceMetrics } from '@/lib/avaline';
 import { AvalineRequest, AvalineResponse } from '@/types';
 
+// OpenAI API response types
+interface OpenAIResponse {
+  output_text?: string;
+  output?: Array<{
+    content?: Array<{
+      text?: string | { value: string };
+      content?: string;
+      value?: string;
+    }>;
+  }>;
+  content?: Array<{
+    text?: { value: string };
+  }>;
+  [key: string]: unknown;
+}
+
 export async function POST(req: Request) {
   try {
     const body: AvalineRequest = await req.json();
@@ -80,12 +96,12 @@ export async function POST(req: Request) {
       const pieces: string[] = [];
 
       // 1) Top-level output_text
-      if (typeof (responsesData as any).output_text === 'string') {
-        pieces.push((responsesData as any).output_text);
+      if (typeof (responsesData as OpenAIResponse).output_text === 'string') {
+        pieces.push((responsesData as OpenAIResponse).output_text);
       }
 
       // 2) response.output array with content blocks
-      const output = (responsesData as any).output;
+      const output = (responsesData as OpenAIResponse).output;
       if (Array.isArray(output)) {
         for (const item of output) {
           const contentArr = item?.content;
@@ -107,8 +123,8 @@ export async function POST(req: Request) {
       }
 
       // 3) Some SDKs return response.content[0].text.value
-      const content = (responsesData as any).content;
-      if (Array.isArray(content) && typeof content[0]?.text?.value === 'string') {
+      const content = (responsesData as OpenAIResponse).content;
+      if (Array.isArray(content) && content[0]?.text?.value) {
         pieces.push(content[0].text.value);
       }
 
@@ -119,7 +135,7 @@ export async function POST(req: Request) {
       // 4) As a last resort, deep-scan for human-like text fields
       if (!reply) {
         const collected: string[] = [];
-        const visit = (node: any, depth: number) => {
+        const visit = (node: unknown, depth: number) => {
           if (!node || depth > 6) return;
           const t = typeof node;
           if (t === 'string') {
@@ -132,9 +148,9 @@ export async function POST(req: Request) {
           if (t === 'object') {
             if (Array.isArray(node)) {
               for (const item of node) visit(item, depth + 1);
-            } else {
-              for (const key of Object.keys(node)) {
-                const val = (node as any)[key];
+            } else if (node !== null) {
+              for (const key of Object.keys(node as Record<string, unknown>)) {
+                const val = (node as Record<string, unknown>)[key];
                 visit(val, depth + 1);
               }
             }
