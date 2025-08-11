@@ -96,8 +96,9 @@ export async function POST(req: Request) {
       const pieces: string[] = [];
 
       // 1) Top-level output_text
-      if (typeof (responsesData as OpenAIResponse).output_text === 'string') {
-        pieces.push((responsesData as OpenAIResponse).output_text);
+      const outputText = (responsesData as OpenAIResponse).output_text;
+      if (outputText && typeof outputText === 'string') {
+        pieces.push(outputText);
       }
 
       // 2) response.output array with content blocks
@@ -124,7 +125,7 @@ export async function POST(req: Request) {
 
       // 3) Some SDKs return response.content[0].text.value
       const content = (responsesData as OpenAIResponse).content;
-      if (Array.isArray(content) && content[0]?.text?.value) {
+      if (Array.isArray(content) && content[0]?.text?.value && typeof content[0].text.value === 'string') {
         pieces.push(content[0].text.value);
       }
 
