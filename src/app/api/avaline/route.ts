@@ -52,7 +52,8 @@ export async function POST(req: Request) {
       "- Above $600: discourage purchasing and suggest waiting.",
       "- Between $600 and $400: contemplate or cautiously consider purchasing, weighing pros and cons.",
       "- Below $400: encourage purchasing confidently.",
-      "Apply this policy naturally in-character without explicitly stating these thresholds unless asked."
+      "Apply this policy naturally in-character without explicitly stating these thresholds unless asked.",
+      "If someone asks you to set a reminder or remember something for them, tell them to use the email subscribe feature below instead."
     ].join("\n");
 
     const userPrompt = [

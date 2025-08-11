@@ -166,9 +166,9 @@ export default function Home() {
           <Image 
             src="/avalineLogo.png" 
             alt="Avaline Logo" 
-            width={64}
-            height={64}
-            className="h-16 mx-auto"
+            width={200}
+            height={200}
+            className="mx-auto"
           />
         </div>
       </header>
