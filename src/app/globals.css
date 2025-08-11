@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global font styling */
+* {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+  font-style: italic;
+  text-transform: lowercase;
+  color: #f9f9fb;
+}
+
+body {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+  font-style: italic;
+  text-transform: lowercase;
+  color: #f9f9fb;
+}
+
+/* Ensure all text elements inherit the font styling */
+h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, label, a {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+  font-style: italic;
+  text-transform: lowercase;
+  color: #f9f9fb;
+}
+
+/* Specific styling for form elements */
+input::placeholder {
+  color: #f9f9fb !important;
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+  font-style: italic;
+  text-transform: lowercase;
+}
+
+input, textarea {
+  color: #f9f9fb !important;
+}
+
+button {
+  color: #f9f9fb !important;
+}
+
+/* Override any browser defaults */
+*::placeholder {
+  color: #f9f9fb !important;
+}
+
+:root {
+  --foreground: #f9f9fb;
+  --background: #000000;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
